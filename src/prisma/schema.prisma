@@ -1,0 +1,10 @@
+model User {
+  id        String    @id @default(uuid())
+  email     String    @unique
+  password  String    
+  role      UserRole  @default(ATTENDEE)
+  createdAt DateTime  @default(now())
+  
+  organizedEvents Event[] @relation("EventOrganizer")
+  rsvps           RSVP[]
+}

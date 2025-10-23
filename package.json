@@ -1,0 +1,33 @@
+{
+  "name": "event-monolith-app",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev --name init"
+  },
+  "dependencies": {
+    "elysia": "^0.8.0",
+    "@elysiajs/swagger": "^0.8.0",
+    
+    "@prisma/client": "^5.9.0",
+  "bcryptjs": "^2.4.3",
+    "dotenv": "^17.2.3",
+    "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^6.9.8",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
+  },
+  "devDependencies": {
+    "prisma": "^5.9.0",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.9.3",
+    "@types/node": "^20.5.1",
+  "@types/bcryptjs": "^2.4.2",
+    "@types/jsonwebtoken": "^9.0.5",
+    "@types/nodemailer": "^6.4.14"
+  }
+}

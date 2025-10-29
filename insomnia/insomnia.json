@@ -1,0 +1,110 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2025-10-29T00:00:00.000Z",
+  "__export_source": "event-monolith-app",
+  "resources": [
+    {
+      "_id": "wrk_event_monolith",
+      "_type": "workspace",
+      "name": "Event Monolith API",
+      "description": "Insomnia collection for auth, events, RSVPs, and AI",
+      "scope": "collection"
+    },
+    {
+      "_id": "env_base",
+      "_type": "environment",
+      "parentId": "wrk_event_monolith",
+      "name": "Base Environment",
+      "data": {
+        "baseUrl": "http://localhost:3000",
+        "jwt": "REPLACE_WITH_TOKEN",
+        "eventId": "REPLACE_EVENT_ID"
+      }
+    },
+    {
+      "_id": "req_login",
+      "_type": "request",
+      "parentId": "wrk_event_monolith",
+      "name": "Auth: Login",
+      "method": "POST",
+      "url": "{{ baseUrl }}/login",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password\"\n}"
+      }
+    },
+    {
+      "_id": "req_signup",
+      "_type": "request",
+      "parentId": "wrk_event_monolith",
+      "name": "Auth: Signup",
+      "method": "POST",
+      "url": "{{ baseUrl }}/signup",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password\"\n}"
+      }
+    },
+    {
+      "_id": "req_events_get",
+      "_type": "request",
+      "parentId": "wrk_event_monolith",
+      "name": "Events: Get Approved",
+      "method": "GET",
+      "url": "{{ baseUrl }}/events",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" }
+      ]
+    },
+    {
+      "_id": "req_event_create",
+      "_type": "request",
+      "parentId": "wrk_event_monolith",
+      "name": "Events: Create (Organizer)",
+      "method": "POST",
+      "url": "{{ baseUrl }}/events",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" },
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"title\": \"Yoga Morning\",\n  \"description\": \"Gentle session\",\n  \"date\": \"2025-11-01T09:00:00.000Z\",\n  \"location\": \"Studio A\"\n}"
+      }
+    },
+    {
+      "_id": "req_rsvp_yes",
+      "_type": "request",
+      "parentId": "wrk_event_monolith",
+      "name": "RSVP: YES",
+      "method": "POST",
+      "url": "{{ baseUrl }}/events/{{ eventId }}/rsvp",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ jwt }}" },
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"response\": \"YES\"\n}"
+      }
+    },
+    {
+      "_id": "req_ai_topic_health",
+      "_type": "request",
+      "parentId": "wrk_event_monolith",
+      "name": "AI: Suggest by Topic (health)",
+      "method": "POST",
+      "url": "{{ baseUrl }}/ai/suggest",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"topic\": \"health\"\n}"
+      }
+    }
+  ]
+}
+
+

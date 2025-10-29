@@ -1,35 +1,13 @@
-import { Request, Response } from 'express'
-import prisma from '../config/prisma'
+import { prisma } from '../utils/prismaClient'
 
-// ✅ Create a new user
-export const createUser = async (req: Request, res: Response) => {
-  try {
-    const { name, email } = req.body
-
-    if (!name || !email) {
-      return res.status(400).json({ error: 'Name and email are required' })
-    }
-
-    const user = await prisma.user.create({
-      data: { name, email },
-    })
-
-    res.status(201).json(user)
-  } catch (error) {
-    console.error(error)
-    res.status(500).json({ error: 'Failed to create user', details: error })
-  }
+// Simple user helpers (non-Express signatures) to keep legacy files type-safe.
+export async function createUser(data: { name: string; email: string; password?: string }) {
+  const { name, email, password } = data
+  if (!name || !email) throw new Error('Name and email are required')
+  const pwd = password ?? Math.random().toString(36).slice(2, 10)
+  return prisma.user.create({ data: { name, email, password: pwd } })
 }
 
-// ✅ Get all users
-export const getUsers = async (_req: Request, res: Response) => {
-  try {
-    const users = await prisma.user.findMany({
-      include: { events: true }, // fetch all users with their events
-    })
-    res.json(users)
-  } catch (error) {
-    console.error(error)
-    res.status(500).json({ error: 'Failed to fetch users', details: error })
-  }
+export async function getUsers() {
+  return prisma.user.findMany({ include: { events: true } })
 }

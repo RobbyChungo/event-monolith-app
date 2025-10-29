@@ -1,16 +1,17 @@
-import jwt from 'jsonwebtoken'
+// src/utils/jwt.utils.ts
+import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret'
+const JWT_SECRET = process.env.JWT_SECRET || "default_secret";
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
 
-export const signJwt = (payload: Record<string, any>, expiresIn = '7d') => {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn })
+export function signAuthToken(payload: object) {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 }
 
-export const verifyJwt = (token: string) => {
-  try {
-    return jwt.verify(token, JWT_SECRET) as Record<string, any>
-  } catch (error) {
-    return null
-  }
+export function signVerificationToken(payload: object, expiresIn = "1d") {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn });
 }
 
+export function verifyToken<T = any>(token: string): T {
+  return jwt.verify(token, JWT_SECRET) as T;
+}

@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master, consolidate-prisma-schema ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: testdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Wait for Postgres
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/testdb
+        run: |
+          for i in {1..30}; do
+            pg_isready -h localhost -p 5432 && break || sleep 1
+          done
+
+      - name: Deploy migrations (create schema)
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/eventdb
+        run: npx prisma migrate deploy
+
+      - name: Generate Prisma client
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/eventdb
+        run: npx prisma generate
+
+      - name: Seed DB
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/eventdb
+        run: node scripts/seed.js
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      # dev deps already installed with `npm install` above
+
+      - name: Run tests
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/eventdb
+          JWT_SECRET: test-secret
+        run: npx vitest run

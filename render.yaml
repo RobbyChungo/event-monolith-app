@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: event-monolith-app
+    env: node
+    plan: free
+    buildCommand: |
+      npm ci
+      npx prisma generate
+      npm run build
+    startCommand: |
+      npx prisma migrate deploy
+      node dist/index.js
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+

@@ -1,9 +1,6 @@
-import { Router } from 'express'
-import { createUser, getUsers } from '../controllers/userController'
+// Legacy express route placeholder for users
+export function registerUserRoutes(_app: any) {
+	// no-op
+}
 
-const router = Router()
-
-router.post('/', createUser)   // POST /users
-router.get('/', getUsers)      // GET /users
-
-export default router
+export default registerUserRoutes

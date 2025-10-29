@@ -1,70 +1,106 @@
-import { Request, Response } from 'express'
-import bcrypt from 'bcryptjs'
-import prisma from '../config/prisma'
-import { signJwt } from '../utils/jwt.utils'
+import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import { sendEmail } from "../services/email.service";
 
-// Register a new user
-export const register = async (req: Request, res: Response) => {
-  try {
-    const { name, email, password } = req.body
+const prisma = new PrismaClient();
 
-    if (!name || !email || !password) {
-      return res.status(400).json({ error: 'name, email and password are required' })
-    }
+// ✅ Signup Handler
+export const signupHandler = async (ctx) => {
+  const { email, password, name, role } = await ctx.request.json();
 
-    const existing = await prisma.user.findUnique({ where: { email } })
-    if (existing) return res.status(409).json({ error: 'Email already in use' })
-
-    const hashed = await bcrypt.hash(password, 10)
-    const user = await prisma.user.create({
-      data: { name, email, password: hashed },
-    })
-
-    // Don't return password
-    // Sign a token so client can be logged in immediately
-    const token = signJwt({ userId: user.id, email: user.email })
-
-    res.status(201).json({ user: { id: user.id, name: user.name, email: user.email }, token })
-  } catch (error) {
-    console.error(error)
-    res.status(500).json({ error: 'Failed to register user', details: error })
+  if (!email || !password) {
+    ctx.set.status = 400;
+    return { error: "Email and password are required." };
   }
-}
 
-// Login existing user
-export const login = async (req: Request, res: Response) => {
-  try {
-    const { email, password } = req.body
-    if (!email || !password) return res.status(400).json({ error: 'email and password required' })
-
-    const user = await prisma.user.findUnique({ where: { email } })
-    if (!user) return res.status(401).json({ error: 'Invalid credentials' })
-
-    const ok = await bcrypt.compare(password, user.password)
-    if (!ok) return res.status(401).json({ error: 'Invalid credentials' })
-
-    const token = signJwt({ userId: user.id, email: user.email })
-
-    res.json({ user: { id: user.id, name: user.name, email: user.email }, token })
-  } catch (error) {
-    console.error(error)
-    res.status(500).json({ error: 'Failed to login', details: error })
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (existing) {
+    ctx.set.status = 409;
+    return { error: "Email already registered." };
   }
-}
 
-// Get current user profile (requires auth middleware)
-export const me = async (req: Request, res: Response) => {
-  try {
-    const user = (req as any).user
-    if (!user) return res.status(401).json({ error: 'Not authenticated' })
+  const hashed = await bcrypt.hash(password, 10);
 
-    const dbUser = await prisma.user.findUnique({ where: { id: user.id } })
-    if (!dbUser) return res.status(404).json({ error: 'User not found' })
+  const user = await prisma.user.create({
+    data: {
+      email,
+      password: hashed,
+      name,
+      role: role || "ATTENDEE", // ✅ Defaults to ATTENDEE
+    },
+  });
 
-    res.json({ id: dbUser.id, name: dbUser.name, email: dbUser.email })
-  } catch (error) {
-    console.error(error)
-    res.status(500).json({ error: 'Failed to fetch profile', details: error })
+  const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
+    expiresIn: "1d",
+  });
+
+  await sendEmail(
+    user.email,
+    "Verify Your Account",
+    `<p>Hello ${name},</p>
+     <p>Click below to verify your account:</p>
+     <a href="http://localhost:3000/auth/verify?token=${token}">Verify Account</a>`
+  );
+
+  ctx.set.status = 201;
+  return { message: "Verification email sent." };
+};
+
+// ✅ Verify Email
+export const verifyEmailHandler = async (ctx) => {
+  const url = new URL(ctx.request.url);
+  const token = url.searchParams.get("token");
+
+  if (!token) {
+    ctx.set.status = 400;
+    return { error: "Verification token is required." };
   }
-}
 
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.userId;
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { verified: true },
+    });
+
+    ctx.set.status = 200;
+    return { message: "Email verified successfully." };
+  } catch {
+    ctx.set.status = 400;
+    return { error: "Invalid or expired verification token." };
+  }
+};
+
+// ✅ Login Handler
+export const loginHandler = async (ctx) => {
+  const { email, password } = await ctx.request.json();
+
+  if (!email || !password) {
+    ctx.set.status = 400;
+    return { error: "Email and password are required." };
+  }
+
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) {
+    ctx.set.status = 404;
+    return { error: "User not found." };
+  }
+
+  const valid = await bcrypt.compare(password, user.password);
+  if (!valid) {
+    ctx.set.status = 401;
+    return { error: "Invalid credentials." };
+  }
+
+  const token = jwt.sign(
+    { userId: user.id, email: user.email, role: user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRES_IN || "7d" }
+  );
+
+  ctx.set.status = 200;
+  return { message: "Login successful.", token, role: user.role };
+};

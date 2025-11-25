@@ -1,8 +1,12 @@
 # Event Monolith App
 
-Local development and CI setup
+Robby Chungo     | 2410051    | BSE      | 2nd Year, 2nd Semester   | 
 
-Prerequisites
+Chandi Chileshe  | 2410226    | BSE      | 2nd Year, 2nd Semester          
+| John Mwando      | 2410053    | BSE
+     | 2nd Year, 2nd Semester 
+
+     
 - Node 18+
 - Docker (for local Postgres)
 
